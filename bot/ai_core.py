@@ -1,33 +1,27 @@
-import os
-
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from scipy.special import softmax
-from huggingface_hub import login
-import numpy as np
-import emoji
+#ai_core.py
+from langdetect import detect, LangDetectException
+from bot.model_roberta import analyze_en
+from bot.model_rubert import analyze_ru
 import re
 
+def contains_cyrillic(text: str) -> bool:
+	return bool(re.search('[а-яА-ЯёЁ]', text))
 
-
-# Загрузка модели и токенизатора
-MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
-tokenizer = AutoTokenizer.from_pretrained(MODEL)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL)
-
-# Очистка текста от лишнего
-def preprocess(text):
-	text = emoji.demojize(text)
-	text = re.sub(r"http\S+", "", text)
-	return text
-
-# Основная функция анализа эмоций
 def analyze_sentiment(text: str) -> str:
-	text = preprocess(text)
-	tokens = tokenizer(text, return_tensors="pt")
-	result = model(**tokens)
-	scores = result.logits.detach().numpy()[0]
-	probs = softmax(scores)
+	if not text.strip():
+		return "Пустое сообщение"
 
-	labels = ['негативная', 'нейтральная', 'позитивная']
-	top = np.argmax(probs)
-	return f'Тональность: {labels[top]}'
+	if contains_cyrillic(text):
+		return analyze_ru(text)
+
+	try:
+		lang = detect(text)
+
+		if lang == 'en' or not contains_cyrillic(text):
+			return analyze_en(text)
+		else:
+			return analyze_ru(text)
+
+	except LangDetectException:
+	# Если не удалось определить - пробуем английскую модель
+		return analyze_en(text)

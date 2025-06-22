@@ -2,3 +2,4 @@ transformers
 torch
 emoji
 requests
+langdetect
