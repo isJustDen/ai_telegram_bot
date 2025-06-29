@@ -4,3 +4,4 @@ emoji
 requests
 langdetect
 aiosqlite
+matplotlib

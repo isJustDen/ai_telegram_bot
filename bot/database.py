@@ -39,8 +39,40 @@ async def save_result(user_id: int, message:str, sentiment:str, lang:str):
         print(f'Ошибка сохранения: {e}')
         return False
 
-async def get_last_record(user_id: int):
-    async with aiosqlite.connect(DB_NAME) as db:
-        cursor = await db.execute(
-            "SELECT * FROM emotions WHERE user_id=? ORDER BY ID DESC LIMIT 1",(user_id,) )
-        return await cursor.fetchone()
+# Получить последние N записей
+async def get_last_records(user_id: int, limit: int = 3):
+	async with aiosqlite.connect(DB_NAME) as db:
+		cursor = await db.execute(
+			""" 
+			SELECT message, sentiment, timestamp
+			FROM emotions
+			WHERE user_id = ?
+			ORDER BY id DESC
+			LIMIT ?
+			""", (user_id, limit)
+		)
+		return await cursor.fetchall()
+
+# Получить статистику по тональности
+async def get_sentiment_stats(user_id: int):
+	async with aiosqlite.connect(DB_NAME) as db:
+		cursor = await db.execute(
+			"""
+			SELECT sentiment, COUNT(*)
+			FROM emotions
+			WHERE user_id = ?
+			GROUP BY sentiment
+			""", (user_id,))
+		rows = await cursor.fetchall()
+	stats = {'позитивная': 0, 'нейтральная': 0, 'негативная': 0}
+
+	for sentiment, count in rows:
+	# sentiment может быть вида "(RU) Тональность: позитивная"
+		if 'позитивная' in sentiment:
+			stats['позитивная'] += count
+		elif 'нейтральная' in sentiment:
+			stats['нейтральная'] += count
+		elif 'негативная' in sentiment:
+			stats['негативная'] += count
+
+	return stats
