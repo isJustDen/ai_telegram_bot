@@ -17,7 +17,7 @@ def preprocess(text):
 	return text
 
 # Основная функция анализа эмоций
-def analyze_en(text: str) -> str:
+async def analyze_en(text: str) -> str:
 	text = preprocess(text)
 	tokens = tokenizer(text, return_tensors="pt")
 	result = model(**tokens)

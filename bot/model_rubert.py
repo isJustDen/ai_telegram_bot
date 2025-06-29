@@ -7,7 +7,7 @@ MODEL = "cointegrated/rubert-tiny-sentiment-balanced"
 tokenizer = AutoTokenizer.from_pretrained(MODEL)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL)
 
-def analyze_ru(text: str) -> str:
+async def analyze_ru(text: str) -> str:
 	inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
 	with torch.no_grad():
 		outputs = model(**inputs)
